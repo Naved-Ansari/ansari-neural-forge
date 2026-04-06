@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ansari Neural Forge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      padding: 15px;
+      background: #020617;
+      text-align: center;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 12px;
+      line-height: 1.4;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #2563eb;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #1e293b;
+    }
+
+    footer {
+      padding: 10px;
+      background: #020617;
+      border-top: 1px solid #1e293b;
+    }
+
+    .input-row {
+      display: flex;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 16px;
+      background: #6366f1;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #4f46e5;
+    }
+
+    .suggestions {
+      font-size: 12px;
+      margin-top: 8px;
+      opacity: 0.7;
+    }
+
+    .suggestions span {
+      display: block;
+      cursor: pointer;
+      margin-top: 3px;
+    }
+
+    .suggestions span:hover {
+      color: #38bdf8;
+    }
+
+    .typing {
+      font-size: 12px;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2>Ansari Neural Forge</h2>
+  <p>Your Multi-Agent Productivity Assistant</p>
+</header>
+
+<div id="chat"></div>
+
+<footer>
+  <div class="input-row">
+    <input id="input" placeholder="Type your request..." />
+    <button onclick="send()">Send</button>
+  </div>
+
+  <div class="suggestions">
+    Try:
+    <span onclick="quick('create task submit report')">• create task submit report</span>
+    <span onclick="quick('schedule meeting tomorrow at 5pm')">• schedule meeting tomorrow at 5pm</span>
+    <span onclick="quick('show tasks')">• show tasks</span>
+  </div>
+</footer>
+
+<script>
+const chat = document.getElementById("chat");
+
+// AUTO GREETING
+window.onload = () => {
+  chat.innerHTML += `
+    <div class="msg bot">
+      👋 Hello! I'm <strong>Ansari AI</strong><br><br>
+      I can help you manage:<br>
+      📝 Tasks<br>
+      📅 Schedules<br>
+      🗒️ Notes<br><br>
+      Try typing something below 👇
+    </div>
+  `;
+};
+
+function quick(text) {
+  document.getElementById("input").value = text;
+  send();
+}
+
+async function send() {
+  const inputBox = document.getElementById("input");
+  const message = inputBox.value.trim();
+  if (!message) return;
+
+  chat.innerHTML += `<div class="msg user">${message}</div>`;
+  inputBox.value = "";
+
+  const typing = document.createElement("div");
+  typing.className = "msg bot typing";
+  typing.innerText = "Thinking...";
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const res = await fetch("/query", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ input: message })
+    });
+
+    const data = await res.json();
+    typing.remove();
+
+    let responseText = "";
+
+    // Format list
+    if (Array.isArray(data.response)) {
+      if (data.response.length === 0) {
+        responseText = "📭 No items found. Try creating one!";
+      } else {
+        responseText = data.response
+          .map(item => `✅ ${item}`)
+          .join("<br>");
+      }
+    }
+
+    // Workflow
+    else if (typeof data.response === "object") {
+      if (data.response.workflow) {
+        responseText = data.response.workflow.join("<br>");
+      } else {
+        responseText = JSON.stringify(data.response);
+      }
+    }
+
+    // Normal text
+    else {
+      responseText = data.response;
+    }
+
+    chat.innerHTML += `<div class="msg bot">${responseText}</div>`;
+    chat.scrollTop = chat.scrollHeight;
+
+  } catch (err) {
+    typing.innerText = "⚠️ Error connecting to server";
+  }
+}
+</script>
+
+</body>
+</html>
