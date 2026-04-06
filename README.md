@@ -6,7 +6,7 @@
 
 ## 🧠 Overview
 
-ForgeFlow AI is an intelligent multi-agent system that helps users manage tasks, schedules, and notes through a conversational interface.
+Ansari Neural Forge is an intelligent multi-agent system that helps users manage tasks, schedules, and notes through a conversational interface.
 
 It demonstrates how multiple AI agents can collaborate using shared data and tools to execute real-world workflows.
 
